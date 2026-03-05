@@ -2,11 +2,20 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/hrms';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://anupthakarework_db_user:a7LwVnxFBKNANeYn@cluster0.nws9voz.mongodb.net/?appName=Cluster0';
 
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+    connectTimeoutMS: 10000,
+    retryWrites: true,
+    w: 'majority'
+})
     .then(() => console.log('Connected to MongoDB database.'))
-    .catch(err => console.error('Error connecting to MongoDB:', err.message));
+    .catch(err => {
+        console.error('Error connecting to MongoDB:', err.message);
+        process.exit(1);
+    });
 
 // Add robust toJSON transform to convert _id to id for the frontend
 const toJSONOptions = {
