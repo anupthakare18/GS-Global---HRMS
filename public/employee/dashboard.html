@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard - HRMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-50">
+
+    <div class="dashboard-layout">
+        <aside id="sidebar" class="sidebar-container shadow-xl lg:shadow-none"></aside>
+
+        <main class="main-content">
+            <header id="header" class="top-header shadow-sm"></header>
+
+            <div class="content-area">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Status Cards -->
+                    <div
+                        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm font-medium">Today's Status</h3>
+                            <div class="p-2 bg-blue-50 rounded-lg text-blue-600"><i class="fas fa-calendar-day"></i>
+                            </div>
+                        </div>
+                        <p id="todayDate" class="text-2xl font-bold text-gray-800">-</p>
+                        <p id="punchStatusText" class="text-sm font-medium mt-2 text-gray-500">Loading...</p>
+                    </div>
+
+                    <div
+                        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm font-medium">Punch In</h3>
+                            <div class="p-2 bg-green-50 rounded-lg text-green-600"><i class="fas fa-sign-in-alt"></i>
+                            </div>
+                        </div>
+                        <p id="punchInTime" class="text-2xl font-bold text-gray-800">--:--</p>
+                    </div>
+
+                    <div
+                        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm font-medium">Punch Out</h3>
+                            <div class="p-2 bg-red-50 rounded-lg text-red-600"><i class="fas fa-sign-out-alt"></i></div>
+                        </div>
+                        <p id="punchOutTime" class="text-2xl font-bold text-gray-800">--:--</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-6 border-b pb-4">Quick Actions</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <a href="/employee/attendance.html"
+                                class="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-100">
+                                <i class="fas fa-fingerprint text-3xl mb-3 text-gray-400"></i>
+                                <span class="font-medium text-gray-700">Mark Attendance</span>
+                            </a>
+                            <a href="/employee/leave.html"
+                                class="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-100">
+                                <i class="fas fa-calendar-plus text-3xl mb-3 text-gray-400"></i>
+                                <span class="font-medium text-gray-700">Apply Leave</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-6 border-b pb-4">Welcome Back</h3>
+                        <div class="flex items-center space-x-4">
+                            <div
+                                class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold">
+                                <span id="userInitials">U</span>
+                            </div>
+                            <div>
+                                <h4 id="userNameDisplay" class="text-xl font-bold text-gray-800">User Name</h4>
+                                <p id="userDeptDisplay" class="text-gray-500">Department</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = requireAuth('employee');
+            if (!user) return;
+
+            renderSidebar('employee');
+            renderHeader('Dashboard');
+
+            // Setup user info details
+            document.getElementById('userNameDisplay').textContent = user.name;
+            document.getElementById('userDeptDisplay').textContent = user.department || 'Employee';
+            document.getElementById('userInitials').textContent = user.name.charAt(0).toUpperCase();
+
+            // Set Date
+            const today = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('todayDate').textContent = today.toLocaleDateString('en-US', options);
+
+            try {
+                // Fetch attendance status
+                const data = await fetchAPI(`/attendance/${user.id}`);
+
+                if (data.status === 'Not punched in' || !data.punch_in) {
+                    document.getElementById('punchStatusText').textContent = "Not punched in yet";
+                    document.getElementById('punchStatusText').classList.add('text-yellow-600');
+                } else {
+                    document.getElementById('punchInTime').textContent = data.punch_in;
+                    if (data.punch_out) {
+                        document.getElementById('punchStatusText').textContent = "Shift Completed";
+                        document.getElementById('punchStatusText').classList.add('text-green-600');
+                        document.getElementById('punchOutTime').textContent = data.punch_out;
+                    } else {
+                        document.getElementById('punchStatusText').textContent = "Currently Working";
+                        document.getElementById('punchStatusText').classList.add('text-blue-600');
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load dashboard data");
+            }
+        });
+    </script>
+</body>
+
+</html>

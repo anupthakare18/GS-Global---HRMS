@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance - HRMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-50">
+
+    <div class="dashboard-layout">
+        <aside id="sidebar" class="sidebar-container shadow-xl lg:shadow-none"></aside>
+
+        <main class="main-content">
+            <header id="header" class="top-header shadow-sm"></header>
+
+            <div class="content-area max-w-4xl mx-auto">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                    <div class="bg-blue-600 text-white p-6 text-center">
+                        <h2 class="text-2xl font-bold mb-2">Daily Attendance</h2>
+                        <p id="currentDate" class="opacity-90"></p>
+                        <div id="currentTime" class="text-4xl font-mono mt-4 font-bold tracking-wider">00:00:00</div>
+                    </div>
+
+                    <div class="p-8 text-center">
+                        <div id="statusMessage" class="mb-8 text-lg font-medium text-gray-600">Checking status...</div>
+
+                        <div class="flex flex-col sm:flex-row justify-center items-center gap-6">
+                            <button id="punchInBtn"
+                                class="w-48 py-4 px-6 rounded-xl font-bold text-white bg-green-500 hover:bg-green-600 shadow-lg shadow-green-200 transition-all transform hover:-translate-y-1 opacity-50 cursor-not-allowed"
+                                disabled>
+                                <i class="fas fa-sign-in-alt mr-2"></i> Punch In
+                            </button>
+                            <button id="punchOutBtn"
+                                class="w-48 py-4 px-6 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-200 transition-all transform hover:-translate-y-1 opacity-50 cursor-not-allowed"
+                                disabled>
+                                <i class="fas fa-sign-out-alt mr-2"></i> Punch Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = requireAuth('employee');
+            if (!user) return;
+
+            renderSidebar('employee');
+            renderHeader('Attendance');
+
+            // Clock functionality
+            function updateClock() {
+                const now = new Date();
+                document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', { hour12: false });
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            const punchInBtn = document.getElementById('punchInBtn');
+            const punchOutBtn = document.getElementById('punchOutBtn');
+            const statusMessage = document.getElementById('statusMessage');
+
+            async function checkStatus() {
+                try {
+                    const data = await fetchAPI(`/attendance/${user.id}`);
+
+                    punchInBtn.disabled = true;
+                    punchOutBtn.disabled = true;
+                    punchInBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    punchOutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+                    if (data.status === 'Not punched in' || !data.punch_in) {
+                        statusMessage.innerHTML = '<span class="text-yellow-600"><i class="fas fa-exclamation-circle mr-1"></i> You have not punched in today.</span>';
+                        punchInBtn.disabled = false;
+                        punchInBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else if (data.punch_in && !data.punch_out) {
+                        statusMessage.innerHTML = `<span class="text-blue-600"><i class="fas fa-info-circle mr-1"></i> Punched in at ${data.punch_in}. Working...</span>`;
+                        punchOutBtn.disabled = false;
+                        punchOutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else if (data.punch_out) {
+                        statusMessage.innerHTML = `<span class="text-green-600"><i class="fas fa-check-circle mr-1"></i> Shift completed. (In: ${data.punch_in}, Out: ${data.punch_out})</span>`;
+                    }
+                } catch (err) {
+                    statusMessage.textContent = 'Error loading status.';
+                }
+            }
+
+            punchInBtn.addEventListener('click', async () => {
+                try {
+                    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+                    const date = new Date().toISOString().split('T')[0];
+
+                    await fetchAPI('/attendance/punch-in', {
+                        method: 'POST',
+                        body: JSON.stringify({ employee_id: user.id, date, time })
+                    });
+
+                    showToast('Punched in successfully!');
+                    checkStatus();
+                } catch (err) {
+                    showToast(err.message, 'error');
+                }
+            });
+
+            punchOutBtn.addEventListener('click', async () => {
+                try {
+                    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+                    const date = new Date().toISOString().split('T')[0];
+
+                    await fetchAPI('/attendance/punch-out', {
+                        method: 'POST',
+                        body: JSON.stringify({ employee_id: user.id, date, time })
+                    });
+
+                    showToast('Punched out successfully!');
+                    checkStatus();
+                } catch (err) {
+                    showToast(err.message, 'error');
+                }
+            });
+
+            checkStatus();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Reports - HRMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-50">
+
+    <div class="dashboard-layout">
+        <aside id="sidebar" class="sidebar-container shadow-xl lg:shadow-none"></aside>
+
+        <main class="main-content">
+            <header id="header" class="top-header shadow-sm"></header>
+
+            <div class="content-area">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div
+                        class="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/50 gap-4">
+                        <h2 class="text-xl font-bold text-gray-800">Daily Work Reports</h2>
+
+                        <div class="flex flex-wrap items-center gap-3">
+                            <input type="date" id="filterDate"
+                                class="px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <button onclick="loadReports()"
+                                class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                Filter
+                            </button>
+                            <button onclick="document.getElementById('filterDate').value=''; loadReports()"
+                                class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                Clear
+                            </button>
+                            <button onclick="exportToExcel('reports')"
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm ml-2">
+                                <i class="fas fa-file-excel mr-2"></i> Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-6">
+                        <div id="reportsContainer" class="space-y-6">
+                            <div class="text-center py-8 text-gray-500">Loading reports...</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = requireAuth('admin');
+            if (!user) return;
+
+            renderSidebar('admin');
+            renderHeader('Employee Work Reports');
+
+            // Default to today
+            document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
+            loadReports();
+        });
+
+        async function loadReports() {
+            const container = document.getElementById('reportsContainer');
+            const date = document.getElementById('filterDate').value;
+
+            try {
+                const url = date ? `/reports?date=${date}` : '/reports';
+                const reports = await fetchAPI(url);
+
+                if (reports.length === 0) {
+                    container.innerHTML = '<div class="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-gray-100 border-dashed"><i class="fas fa-inbox text-4xl mb-3 text-gray-300 block"></i> No work reports submitted for this date.</div>';
+                    return;
+                }
+
+                container.innerHTML = reports.map(report => `
+                    <div class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start mb-4 border-b border-gray-100 pb-3">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold mr-3">
+                                    ${report.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-gray-900">${report.name}</h3>
+                                    <p class="text-xs text-gray-500">Submitted on ${report.date} at ${new Date(report.created_at).toLocaleTimeString()}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Work Summary</h4>
+                            <p class="text-gray-800 whitespace-pre-line text-sm bg-gray-50 p-3 rounded-lg border border-gray-100">${report.work_summary}</p>
+                        </div>
+
+                        ${report.notes ? `
+                        <div>
+                            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Notes & Issues</h4>
+                            <p class="text-gray-700 whitespace-pre-line text-sm italic border-l-4 border-yellow-300 pl-3 py-1">${report.notes}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = '<div class="text-center py-8 text-red-500">Error loading reports</div>';
+            }
+        }
+
+        async function exportToExcel(type) {
+            try {
+                const blob = await fetchAPI(`/export/${type}`);
+                downloadBlob(blob, `${type}_report.xlsx`);
+                showToast('Export successful');
+            } catch (error) {
+                showToast('Failed to export data', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

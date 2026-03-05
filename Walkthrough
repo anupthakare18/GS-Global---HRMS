@@ -1,0 +1,77 @@
+# HRMS Application Walkthrough
+
+## Overview
+A lightweight, mobile-responsive HR Management System has been successfully built using Node.js, Express.js, SQLite, and vanilla JavaScript with Tailwind CSS. The app features role-based access for Admins and Employees, attendance tracking, leave applications, daily work reports, and Excel export functionality.
+
+## Features Implemented
+
+### Backend (Node.js + Express)
+- Configured a local `server.js` with API routes for authentication, attendance, leaves, reports, and admin management.
+- Included `xlsx` for Excel export functionality of reports, leaves, and attendance.
+- Initialized an SQLite database (`database.js`) with 4 tables: `employees`, `attendance`, `leaves`, and `daily_reports`.
+
+### Frontend (Tailwind + Vanilla JS)
+- Added a responsive, modern HTML/CSS layout focusing on clear typography and clean cards.
+- **Login screen** with authentication validation.
+- **Employee Pages**:
+  - **Dashboard**: Quick view of today's attendance status and time.
+  - **Punch In/Out**: One-click action for recording attendance.
+  - **Leave Management**: Form to apply for leave and view past history.
+  - **Daily Report**: Submission tool for work summaries.
+  - **Profile**: Displays employee credentials and role details.
+- **Admin Pages**:
+  - **Dashboard**: High-level statistical overview (Total employees, today's attendance, pending leaves).
+  - **Employee Management**: Add, edit, and delete employee records via a modal UI.
+  - **Leave Management**: View leave requests with approve/reject actions and export to Excel.
+  - **Attendance Records**: Date-filtered view of all employee punches, with export to Excel.
+  - **Daily Work Reports**: Date-filtered view of all submitted work summaries, with export to Excel.
+
+## Running the Application Locally
+The server is currently running in your terminal on `http://localhost:3000`. 
+If you ever need to stop it and restart it, simply navigate to the project directory and run:
+
+```bash
+node server.js
+```
+
+### Default Login
+A default admin user is automatically created when the database initializes:
+- **Email**: `admin@example.com`
+- **Password**: `admin123`
+
+You can log in at `http://localhost:3000/` and begin creating new employee accounts!
+
+## Deployment Guide
+
+Deploying your application allows your employees to access it from anywhere over the internet. Here are the recommended ways to deploy this Node.js app for free:
+
+### 1. Render.com (Recommended - Easiest & Free)
+Render provides free web hosting for Node.js apps.
+
+1. **Push to GitHub**: Upload your project directory to a new private GitHub repository.
+2. **Create Render Account**: Go to [Render.com](https://render.com) and create an account.
+3. **New Web Service**: Click "New" and select "Web Service".
+4. **Connect GitHub**: Connect your GitHub account and select your HRMS repository.
+5. **Configuration**:
+   - Environment: `Node`
+   - Build Command: `npm install`
+   - Start Command: `node server.js`
+   - Instance Type: `Free`
+6. **Deploy**: Click "Create Web Service". Render will automatically build and host your app on a URL (e.g., `your-app.onrender.com`).
+
+*(Note: Free instances spin down after 15 minutes of inactivity, which causes a slight delay on the next request. For a company tool, you may eventually want to upgrade to a $7/mo paid tier so it stays active 24/7).*
+
+### 2. DigitalOcean App Platform or Heroku (Alternative)
+Similar to Render:
+- You upload code to GitHub.
+- Connect platform to GitHub repo.
+- Tell it to run `node server.js`.
+
+### Important Note about SQLite on Free Hosts
+The application uses **SQLite** for the database, which saves data to a local file (`hrms.db`). 
+
+**Warning:** Most free cloud hosts (like Render or Heroku) use "ephemeral file systems". This means whenever they restart your server, **your database file will be deleted and reset to default**. 
+
+**Solutions for Production Deployment:**
+1. **Host on a Virtual Private Server (VPS)**: Rent a small server on DigitalOcean ($4/mo) or AWS Lightsail ($3.50/mo), SSH in, and run your app. The file system is persistent, so SQLite works perfectly.
+2. **Change Database**: To use a service like Render for free, you should swap SQLite for a cloud database like **MongoDB Atlas** (Free Tier) or **Supabase** (Free Postgres DB). If you want to do this, let me know and I can update the code to use MongoDB or Postgres!

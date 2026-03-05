@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - HRMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-50">
+
+    <div class="dashboard-layout">
+        <aside id="sidebar" class="sidebar-container shadow-xl lg:shadow-none"></aside>
+
+        <main class="main-content">
+            <header id="header" class="top-header shadow-sm"></header>
+
+            <div class="content-area">
+
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800">Overview</h2>
+                    <p class="text-gray-500">Welcome back, Admin. Here's what's happening today.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Stat Cards -->
+                    <div
+                        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm font-medium">Total Employees</h3>
+                            <div class="p-2 bg-blue-50 rounded-lg text-blue-600"><i class="fas fa-users"></i></div>
+                        </div>
+                        <p id="statEmployees" class="text-3xl font-bold text-gray-800">-</p>
+                    </div>
+
+                    <div
+                        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm font-medium">Today's Attendance</h3>
+                            <div class="p-2 bg-green-50 rounded-lg text-green-600"><i class="fas fa-fingerprint"></i>
+                            </div>
+                        </div>
+                        <p id="statAttendance" class="text-3xl font-bold text-gray-800">-</p>
+                    </div>
+
+                    <div
+                        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm font-medium">Pending Leaves</h3>
+                            <div class="p-2 bg-yellow-50 rounded-lg text-yellow-600"><i
+                                    class="fas fa-calendar-times"></i></div>
+                        </div>
+                        <p id="statLeaves" class="text-3xl font-bold text-gray-800">-</p>
+                    </div>
+
+                    <div
+                        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 text-sm font-medium">Reports Submitted</h3>
+                            <div class="p-2 bg-purple-50 rounded-lg text-purple-600"><i class="fas fa-file-alt"></i>
+                            </div>
+                        </div>
+                        <p id="statReports" class="text-3xl font-bold text-gray-800">-</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-bold text-gray-800">Quick Actions</h3>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <a href="/admin/employees.html"
+                                class="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-100">
+                                <i class="fas fa-user-plus text-3xl mb-3 text-gray-400"></i>
+                                <span class="font-medium text-gray-700">Add Employee</span>
+                            </a>
+                            <a href="/admin/leaves.html"
+                                class="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-xl hover:bg-yellow-50 hover:text-yellow-600 transition-colors border border-gray-100">
+                                <i class="fas fa-check-circle text-3xl mb-3 text-gray-400"></i>
+                                <span class="font-medium text-gray-700">Approve Leaves</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-6">System Info</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-600"><i class="fas fa-database mr-2"></i> Database Status</span>
+                                <span class="text-green-600 font-medium">Connected</span>
+                            </div>
+                            <div class="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                                <span class="text-gray-600"><i class="fas fa-clock mr-2"></i> System Time</span>
+                                <span id="sysTime" class="text-gray-800 font-medium"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = requireAuth('admin');
+            if (!user) return;
+
+            renderSidebar('admin');
+            renderHeader('Admin Dashboard');
+
+            // Clock
+            setInterval(() => {
+                document.getElementById('sysTime').textContent = new Date().toLocaleTimeString();
+            }, 1000);
+
+            try {
+                const stats = await fetchAPI('/admin/dashboard-stats');
+                document.getElementById('statEmployees').textContent = stats.totalEmployees;
+                document.getElementById('statAttendance').textContent = stats.todayAttendance;
+                document.getElementById('statLeaves').textContent = stats.pendingLeaves;
+                document.getElementById('statReports').textContent = stats.submittedReports;
+            } catch (err) {
+                console.error('Failed to load dashboard stats');
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - HRMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-50">
+
+    <div class="dashboard-layout">
+        <aside id="sidebar" class="sidebar-container shadow-xl lg:shadow-none"></aside>
+
+        <main class="main-content">
+            <header id="header" class="top-header shadow-sm"></header>
+
+            <div class="content-area max-w-2xl mx-auto">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-8 text-center text-white relative">
+                        <div
+                            class="absolute top-4 right-4 bg-white/20 px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm">
+                            Employee
+                        </div>
+                        <div
+                            class="w-24 h-24 bg-white rounded-full mx-auto flex items-center justify-center text-blue-600 text-4xl font-bold mb-4 shadow-lg ring-4 ring-white/30">
+                            <span id="profileInitials">U</span>
+                        </div>
+                        <h2 id="profileName" class="text-3xl font-bold">Name</h2>
+                        <p id="profileDepartment" class="text-blue-100 mt-2 font-medium">Department</p>
+                    </div>
+
+                    <div class="p-8">
+                        <h3 class="text-lg font-bold text-gray-800 border-b pb-4 mb-6">Personal Information</h3>
+
+                        <div class="space-y-6">
+                            <div class="flex items-center">
+                                <div
+                                    class="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 mr-4 border border-gray-100">
+                                    <i class="fas fa-envelope text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 font-medium">Email Address</p>
+                                    <p id="profileEmail" class="text-gray-900 font-medium break-all">email@example.com
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center">
+                                <div
+                                    class="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 mr-4 border border-gray-100">
+                                    <i class="fas fa-id-badge text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 font-medium">Employee ID</p>
+                                    <p id="profileId" class="text-gray-900 font-medium">000</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center">
+                                <div
+                                    class="w-12 h-12 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 mr-4 border border-gray-100">
+                                    <i class="fas fa-shield-alt text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-500 font-medium">System Role</p>
+                                    <p class="text-gray-900 font-medium capitalize">Employee</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-6 border-t border-gray-100 flex justify-center">
+                            <button onclick="logout()"
+                                class="px-6 py-2 border border-red-500 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = requireAuth('employee');
+            if (!user) return;
+
+            renderSidebar('employee');
+            renderHeader('My Profile');
+
+            document.getElementById('profileName').textContent = user.name;
+            document.getElementById('profileEmail').textContent = user.email;
+            document.getElementById('profileDepartment').textContent = user.department || 'Not Assigned';
+            document.getElementById('profileId').textContent = `EMP-${String(user.id).padStart(4, '0')}`;
+            document.getElementById('profileInitials').textContent = user.name.charAt(0).toUpperCase();
+        });
+    </script>
+</body>
+
+</html>

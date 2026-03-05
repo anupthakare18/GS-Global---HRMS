@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Leaves - HRMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-50">
+
+    <div class="dashboard-layout">
+        <aside id="sidebar" class="sidebar-container shadow-xl lg:shadow-none"></aside>
+
+        <main class="main-content">
+            <header id="header" class="top-header shadow-sm"></header>
+
+            <div class="content-area">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                        <h2 class="text-xl font-bold text-gray-800">Leave Applications</h2>
+                        <button onclick="exportToExcel('leaves')"
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                            <i class="fas fa-file-excel mr-2"></i> Export to Excel
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Employee</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Type & Duration</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider max-w-xs">
+                                        Reason</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Status</th>
+                                    <th
+                                        class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leavesTable" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="5" class="px-6 py-4 text-center">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = requireAuth('admin');
+            if (!user) return;
+
+            renderSidebar('admin');
+            renderHeader('Leave Management');
+
+            loadLeaves();
+        });
+
+        async function loadLeaves() {
+            const tbody = document.getElementById('leavesTable');
+            try {
+                const leaves = await fetchAPI('/leaves');
+
+                if (leaves.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">No leave applications found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = leaves.map(leave => {
+                    let statusColor = 'bg-yellow-100 text-yellow-800';
+                    if (leave.status === 'approved') statusColor = 'bg-green-100 text-green-800';
+                    if (leave.status === 'rejected') statusColor = 'bg-red-100 text-red-800';
+
+                    let actionButtons = '';
+                    if (leave.status === 'pending') {
+                        actionButtons = `
+                            <button onclick="updateLeave(${leave.id}, 'approved')" class="text-green-600 hover:text-green-900 mx-1 bg-green-50 p-2 rounded-md transition-colors" title="Approve"><i class="fas fa-check"></i></button>
+                            <button onclick="updateLeave(${leave.id}, 'rejected')" class="text-red-600 hover:text-red-900 mx-1 bg-red-50 p-2 rounded-md transition-colors" title="Reject"><i class="fas fa-times"></i></button>
+                        `;
+                    } else {
+                        actionButtons = `<span class="text-xs text-gray-400 italic">No actions available</span>`;
+                    }
+
+                    return `
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">${leave.name}</div>
+                                <div class="text-xs text-gray-500">Applied: ${new Date(leave.created_at).toLocaleDateString()}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">${leave.leave_type}</div>
+                                <div class="text-xs text-gray-500">${leave.start_date} to ${leave.end_date}</div>
+                            </td>
+                            <td class="px-6 py-4 max-w-xs">
+                                <div class="text-sm text-gray-900 line-clamp-2" title="${leave.reason}">${leave.reason}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize ${statusColor}">
+                                    ${leave.status}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                ${actionButtons}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-red-500">Error loading leaves</td></tr>';
+            }
+        }
+
+        async function updateLeave(id, status) {
+            if (confirm(`Are you sure you want to mark this leave as ${status}?`)) {
+                try {
+                    await fetchAPI(`/leaves/${id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ status })
+                    });
+                    showToast(`Leave ${status} successfully`);
+                    loadLeaves();
+                } catch (err) {
+                    showToast(err.message, 'error');
+                }
+            }
+        }
+
+        async function exportToExcel(type) {
+            try {
+                const blob = await fetchAPI(`/export/${type}`);
+                downloadBlob(blob, `${type}_report.xlsx`);
+                showToast('Export successful');
+            } catch (error) {
+                showToast('Failed to export data', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>
