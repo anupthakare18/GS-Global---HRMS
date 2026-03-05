@@ -2,9 +2,9 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-// const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/hrms';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/hrms';
 
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(MONGODB_URI)
     .then(() => console.log('Connected to MongoDB database.'))
     .catch(err => console.error('Error connecting to MongoDB:', err.message));
 
